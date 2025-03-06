@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { WaterIntakeModule } from './water-intake/water-intake.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WaterIntakeModule } from './water-intake/water-intake.module';
     }]),
     AuthModule,
     WaterIntakeModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

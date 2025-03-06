@@ -130,6 +130,30 @@ POST http://localhost:3000/auth/quick-access/revoke
 Authorization: Bearer <your_jwt_token>
 ```
 
+### User Profile
+
+#### Get User Profile
+```http
+GET http://localhost:3000/user/profile
+Authorization: Bearer <your_jwt_token>
+```
+Response includes user information (id, email, name, dailyGoal, quickAccessToken, lastQuickAccess, createdAt, updatedAt) without the password.
+
+#### Update User Profile
+```http
+PATCH http://localhost:3000/user/profile
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+{
+  "name": "New Name",           // optional, 2-50 characters, letters/spaces/hyphens/apostrophes
+  "email": "new@example.com",   // optional, must be unique
+  "password": "NewPassword123", // optional, 8-72 chars, must contain uppercase, lowercase, and number
+  "dailyGoal": 2000            // optional, 500-5000ml
+}
+```
+Response includes the updated user profile without the password.
+
 ### Water Intake
 
 #### Create a water intake
