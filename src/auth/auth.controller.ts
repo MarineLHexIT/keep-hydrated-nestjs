@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RequestWithUser } from '../common/types/request.types';
+import { SafeUser } from '../common/types/response.types';
 
 @Controller('auth')
 export class AuthController {
@@ -28,5 +30,17 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   checkAuth() {
     return { authenticated: true };
+  }
+
+  @Post('quick-access/generate')
+  @UseGuards(JwtAuthGuard)
+  async generateQuickAccess(@Request() req: RequestWithUser): Promise<SafeUser> {
+    return this.authService.generateQuickAccess(req.user.userId);
+  }
+
+  @Post('quick-access/revoke')
+  @UseGuards(JwtAuthGuard)
+  async revokeQuickAccess(@Request() req: RequestWithUser): Promise<SafeUser> {
+    return this.authService.revokeQuickAccess(req.user.userId);
   }
 }

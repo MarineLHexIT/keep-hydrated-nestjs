@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TestUtils } from '../common/test/test-utils';
 import { UnauthorizedException } from '@nestjs/common';
 import { startOfDay, endOfDay } from 'date-fns';
-import { WaterIntake } from '@prisma/client';
+import { WaterIntake, User } from '@prisma/client';
 
 describe('WaterIntakeService', () => {
   let service: WaterIntakeService;
@@ -89,25 +89,36 @@ describe('WaterIntakeService', () => {
   });
 
   describe('quickAccess', () => {
-    it('should create intake with quick access token', async () => {
-      const quickAccessToken = 'test-token';
-      const user = await testUtils.createTestUser({ quickAccessToken });
+    const validToken = '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'; // 64 chars hex
 
-      const intake = await service.quickAccess(quickAccessToken);
+    it('should create intake with quick access token', async () => {
+      const user = await testUtils.createTestUser({ quickAccessToken: validToken });
+
+      const intake = await service.quickAccess(validToken);
       expect(intake).toBeDefined();
       expect(intake.amount).toBe(500);
       expect(intake.id).toBeDefined();
+
+      // Verify last quick access time was updated
+      const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(updatedUser?.lastQuickAccess).toBeDefined();
     });
 
-    it('should throw if invalid token', async () => {
-      await expect(service.quickAccess('invalid-token'))
+    it('should throw if token format is invalid', async () => {
+      const invalidToken = 'invalid-token';
+      await expect(service.quickAccess(invalidToken))
+        .rejects
+        .toThrow(UnauthorizedException);
+    });
+
+    it('should throw if token does not exist', async () => {
+      await expect(service.quickAccess(validToken))
         .rejects
         .toThrow(UnauthorizedException);
     });
 
     it('should throw if used within 5 minutes', async () => {
-      const quickAccessToken = 'test-token';
-      const user = await testUtils.createTestUser({ quickAccessToken });
+      const user = await testUtils.createTestUser({ quickAccessToken: validToken });
 
       // Create a recent intake
       await prisma.waterIntake.create({
@@ -118,9 +129,27 @@ describe('WaterIntakeService', () => {
         },
       });
 
-      await expect(service.quickAccess(quickAccessToken))
+      await expect(service.quickAccess(validToken))
         .rejects
         .toThrow(UnauthorizedException);
+    });
+
+    it('should allow intake after 5 minutes', async () => {
+      const user = await testUtils.createTestUser({ quickAccessToken: validToken });
+
+      // Create an old intake (6 minutes ago)
+      const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+      await prisma.waterIntake.create({
+        data: {
+          userId: user.id,
+          amount: 500,
+          timestamp: sixMinutesAgo,
+        },
+      });
+
+      const intake = await service.quickAccess(validToken);
+      expect(intake).toBeDefined();
+      expect(intake.amount).toBe(500);
     });
   });
 }); 

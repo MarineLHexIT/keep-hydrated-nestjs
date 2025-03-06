@@ -17,7 +17,7 @@ describe('AuthService', () => {
     password: 'hashedPassword',
     name: 'Test User',
     dailyGoal: null,
-    quickAccessToken: null,
+    quickAccessToken: 'test-quick-access-token',
     lastQuickAccess: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -33,6 +33,7 @@ describe('AuthService', () => {
             user: {
               findUnique: jest.fn(),
               create: jest.fn(),
+              update: jest.fn(),
             },
           },
         },
@@ -55,7 +56,7 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create a new user', async () => {
+    it('should create a new user with quick access token', async () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'Password123',
@@ -67,6 +68,15 @@ describe('AuthService', () => {
       jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve('hashedPassword'));
 
       const result = await service.register(registerDto);
+
+      expect(prismaService.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: registerDto.email,
+          password: 'hashedPassword',
+          name: registerDto.name,
+          quickAccessToken: expect.any(String),
+        }),
+      });
 
       expect(result).toEqual({
         access_token: 'test-token',
@@ -87,11 +97,52 @@ describe('AuthService', () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'Password123',
+        name: 'Test User',
       };
 
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
 
       await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('quick access token management', () => {
+    it('should generate a new quick access token', async () => {
+      const userId = '1';
+      const updatedUser = { ...mockUser, quickAccessToken: 'new-token' };
+
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(updatedUser);
+
+      const result = await service.generateQuickAccess(userId);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: expect.objectContaining({
+          quickAccessToken: expect.any(String),
+          lastQuickAccess: null,
+        }),
+      });
+
+      expect(result.quickAccessToken).toBe('new-token');
+    });
+
+    it('should revoke quick access token', async () => {
+      const userId = '1';
+      const updatedUser = { ...mockUser, quickAccessToken: null };
+
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(updatedUser);
+
+      const result = await service.revokeQuickAccess(userId);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: {
+          quickAccessToken: null,
+          lastQuickAccess: null,
+        },
+      });
+
+      expect(result.quickAccessToken).toBeNull();
     });
   });
 

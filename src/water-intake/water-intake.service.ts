@@ -7,11 +7,17 @@ import { WaterIntake } from '@prisma/client';
 
 @Injectable()
 export class WaterIntakeService {
+  private readonly QUICK_ACCESS_TOKEN_LENGTH = 64;
+
   constructor(private prisma: PrismaService) {}
 
   private mapToResponse(intake: WaterIntake): WaterIntakeResponse {
     const { userId, ...response } = intake;
     return response;
+  }
+
+  private isValidQuickAccessToken(token: string): boolean {
+    return token.length === this.QUICK_ACCESS_TOKEN_LENGTH && /^[a-f0-9]+$/.test(token);
   }
 
   async create(userId: string, createWaterIntakeDto: CreateWaterIntakeDto): Promise<WaterIntakeResponse> {
@@ -63,6 +69,10 @@ export class WaterIntakeService {
   }
 
   async quickAccess(quickAccessToken: string): Promise<WaterIntakeResponse> {
+    if (!this.isValidQuickAccessToken(quickAccessToken)) {
+      throw new UnauthorizedException('Invalid quick access token format');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { quickAccessToken },
       include: { waterIntakes: {

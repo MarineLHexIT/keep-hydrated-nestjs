@@ -105,6 +105,7 @@ Content-Type: application/json
   "name": "Your Name"
 }
 ```
+Response includes a quick access token that can be used for quick water intake logging.
 
 #### Login
 ```http
@@ -115,6 +116,18 @@ Content-Type: application/json
   "email": "user@example.com",
   "password": "YourPassword123"
 }
+```
+
+#### Generate Quick Access Token
+```http
+POST http://localhost:3000/auth/quick-access/generate
+Authorization: Bearer <your_jwt_token>
+```
+
+#### Revoke Quick Access Token
+```http
+POST http://localhost:3000/auth/quick-access/revoke
+Authorization: Bearer <your_jwt_token>
 ```
 
 ### Water Intake

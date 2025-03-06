@@ -6,9 +6,12 @@ import { RegisterDto } from './dto/register.dto';
 import { AuthResponse, SafeUser } from '../common/types/response.types';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private readonly QUICK_ACCESS_TOKEN_LENGTH = 64; // 32 bytes = 64 hex characters
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -22,6 +25,19 @@ export class AuthService {
   private generateToken(user: User): string {
     const payload = { email: user.email, sub: user.id };
     return this.jwtService.sign(payload);
+  }
+
+  private generateQuickAccessToken(): string {
+    const token = randomBytes(32).toString('hex');
+    if (!this.isValidQuickAccessToken(token)) {
+      throw new Error('Failed to generate valid quick access token');
+    }
+    return token;
+  }
+
+  private isValidQuickAccessToken(token: string | null): boolean {
+    if (!token) return false;
+    return token.length === this.QUICK_ACCESS_TOKEN_LENGTH && /^[a-f0-9]+$/.test(token);
   }
 
   async validateUser(email: string, password: string): Promise<SafeUser | null> {
@@ -59,6 +75,7 @@ export class AuthService {
         email: registerDto.email,
         password: hashedPassword,
         name: registerDto.name,
+        quickAccessToken: this.generateQuickAccessToken(),
       },
     });
 
@@ -66,6 +83,28 @@ export class AuthService {
       access_token: this.generateToken(user),
       user: this.mapToSafeUser(user),
     };
+  }
+
+  async generateQuickAccess(userId: string): Promise<SafeUser> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        quickAccessToken: this.generateQuickAccessToken(),
+        lastQuickAccess: null,
+      },
+    });
+    return this.mapToSafeUser(user);
+  }
+
+  async revokeQuickAccess(userId: string): Promise<SafeUser> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        quickAccessToken: null,
+        lastQuickAccess: null,
+      },
+    });
+    return this.mapToSafeUser(user);
   }
 
   async logout(): Promise<{ message: string }> {
