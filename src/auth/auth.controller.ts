@@ -28,8 +28,8 @@ export class AuthController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  checkAuth() {
-    return { authenticated: true };
+  async checkAuth(@Request() req: RequestWithUser): Promise<SafeUser> {
+    return this.authService.getUserById(req.user.userId);
   }
 
   @Post('quick-access/generate')
