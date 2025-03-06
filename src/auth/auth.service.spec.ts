@@ -2,15 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
 
 describe('AuthService', () => {
   let service: AuthService;
   let prismaService: PrismaService;
   let jwtService: JwtService;
 
-  const mockUser = {
+  const mockUser: User = {
     id: '1',
     email: 'test@example.com',
     password: 'hashedPassword',
@@ -57,7 +58,7 @@ describe('AuthService', () => {
     it('should create a new user', async () => {
       const registerDto = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123',
         name: 'Test User',
       };
 
@@ -68,26 +69,29 @@ describe('AuthService', () => {
       const result = await service.register(registerDto);
 
       expect(result).toEqual({
-        id: mockUser.id,
-        email: mockUser.email,
-        name: mockUser.name,
-        dailyGoal: mockUser.dailyGoal,
-        quickAccessToken: mockUser.quickAccessToken,
-        lastQuickAccess: mockUser.lastQuickAccess,
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt,
+        access_token: 'test-token',
+        user: {
+          id: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.name,
+          dailyGoal: mockUser.dailyGoal,
+          quickAccessToken: mockUser.quickAccessToken,
+          lastQuickAccess: mockUser.lastQuickAccess,
+          createdAt: mockUser.createdAt,
+          updatedAt: mockUser.updatedAt,
+        },
       });
     });
 
     it('should throw if email exists', async () => {
       const registerDto = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123',
       };
 
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
 
-      await expect(service.register(registerDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -95,7 +99,7 @@ describe('AuthService', () => {
     it('should return token on successful login', async () => {
       const loginDto = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123',
       };
 
       jest.spyOn(service, 'validateUser').mockResolvedValue({
@@ -105,6 +109,8 @@ describe('AuthService', () => {
         dailyGoal: mockUser.dailyGoal,
         quickAccessToken: mockUser.quickAccessToken,
         lastQuickAccess: mockUser.lastQuickAccess,
+        createdAt: mockUser.createdAt,
+        updatedAt: mockUser.updatedAt,
       });
 
       const result = await service.login(loginDto);
@@ -115,6 +121,11 @@ describe('AuthService', () => {
           id: mockUser.id,
           email: mockUser.email,
           name: mockUser.name,
+          dailyGoal: mockUser.dailyGoal,
+          quickAccessToken: mockUser.quickAccessToken,
+          lastQuickAccess: mockUser.lastQuickAccess,
+          createdAt: mockUser.createdAt,
+          updatedAt: mockUser.updatedAt,
         },
       });
     });
