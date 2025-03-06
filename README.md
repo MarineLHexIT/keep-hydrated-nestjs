@@ -1,99 +1,168 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Keep Hydrated API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS application to track daily water intake with authentication and quick access features.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Prerequisites
 
-## Description
+- Node.js (v18 or later)
+- Yarn
+- Docker and Docker Compose
+- MySQL (via Docker)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Docker Configuration
 
-## Project setup
+The application uses Docker to run the MySQL database. The configuration is defined in `docker-compose.yml`:
 
-```bash
-$ yarn install
+```yaml
+# Database container
+- Port: 3306 (MySQL default)
+- Database: keep_hydrated
+- Root password: defined in .env file
+- Volume: MySQL data persisted in docker volume
+
+# Test Database container
+- Port: 3307
+- Database: keep_hydrated_test
+- Used for running tests
 ```
 
-## Compile and run the project
+### Docker Commands
 
 ```bash
-# development
-$ yarn run start
+# Start all containers
+docker-compose up -d
 
-# watch mode
-$ yarn run start:dev
+# Stop all containers
+docker-compose down
 
-# production mode
-$ yarn run start:prod
+# View container logs
+docker-compose logs -f
+
+# Access MySQL CLI
+docker-compose exec db mysql -uroot -p
+
+# Remove volumes (clean database)
+docker-compose down -v
 ```
 
-## Run tests
+## Installation
 
 ```bash
-# unit tests
-$ yarn run test
+# Install dependencies
+yarn install
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# Copy environment files
+cp .env.example .env
+cp .env.example .env.test
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Running the Application
 
 ```bash
-$ yarn install -g mau
-$ mau deploy
+# Start the database
+yarn db:start
+
+# Run database migrations
+yarn db:migrate
+
+# Start the application in development mode
+yarn start:dev
+
+# Access Prisma Studio (database GUI)
+yarn db:studio
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The application will be available at `http://localhost:3000`
 
-## Resources
+## Testing
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Run unit tests
+yarn test
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Run tests with environment variables
+yarn test:with-env
 
-## Support
+# Run e2e tests
+yarn test:e2e
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Generate test coverage
+yarn test:cov
+```
 
-## Stay in touch
+## API Endpoints
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Authentication
 
-## License
+#### Register a new user
+```http
+POST http://localhost:3000/auth/register
+Content-Type: application/json
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+{
+  "email": "user@example.com",
+  "password": "YourPassword123",
+  "name": "Your Name"
+}
+```
+
+#### Login
+```http
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "YourPassword123"
+}
+```
+
+### Water Intake
+
+#### Create a water intake
+```http
+POST http://localhost:3000/water-intake
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+{
+  "amount": 500
+}
+```
+
+#### Get today's water intake
+```http
+GET http://localhost:3000/water-intake/today
+Authorization: Bearer <your_jwt_token>
+```
+
+#### Get all water intakes
+```http
+GET http://localhost:3000/water-intake
+Authorization: Bearer <your_jwt_token>
+```
+
+#### Quick access (no authentication required)
+```http
+GET http://localhost:3000/water-intake/quick/<quick_access_token>
+```
+
+## Environment Variables
+
+### Application Variables
+- `PORT`: Application port (default: 3000)
+- `JWT_SECRET`: Secret key for JWT token generation
+
+### Database Variables
+- `DATABASE_URL`: MySQL connection string (format: `mysql://user:password@localhost:3306/database`)
+- `MYSQL_ROOT_PASSWORD`: Root password for MySQL
+- `MYSQL_DATABASE`: Database name (default: keep_hydrated)
+- `MYSQL_TEST_DATABASE`: Test database name (default: keep_hydrated_test)
+- `MYSQL_PORT`: MySQL port (default: 3306)
+- `MYSQL_TEST_PORT`: Test MySQL port (default: 3307)
+
+### Rate Limiting Variables
+- `THROTTLE_TTL`: Time-to-live for the throttle counter in seconds (default: 60)
+- `THROTTLE_LIMIT`: Number of requests allowed within the TTL period (default: 10)
+- `QUICK_ACCESS_THROTTLE_TTL`: Time-to-live for quick access throttle in seconds (default: 300)
+- `QUICK_ACCESS_THROTTLE_LIMIT`: Number of quick access requests allowed within the TTL period (default: 1)
