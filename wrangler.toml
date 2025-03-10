@@ -1,0 +1,25 @@
+name = "keep-hydrated-api"
+main = "dist/worker.js"
+compatibility_date = "2024-02-21"
+
+# Enable Cloudflare D1
+[[d1_databases]]
+binding = "DB"
+database_name = "keep_hydrated_db"
+database_id = ""  # You'll need to replace this with your D1 database ID
+
+# Configure environment variables
+[vars]
+NODE_ENV = "production"
+JWT_EXPIRATION = "1d"
+
+# Secrets that will need to be set using wrangler:
+# - JWT_SECRET
+
+[build]
+command = "npm run build"
+watch_dir = "src"
+
+[build.upload]
+format = "modules"
+main = "./worker.js" 
