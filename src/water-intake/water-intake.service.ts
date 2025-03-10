@@ -17,10 +17,16 @@ export class WaterIntakeService {
   }
 
   private isValidQuickAccessToken(token: string): boolean {
-    return token.length === this.QUICK_ACCESS_TOKEN_LENGTH && /^[a-f0-9]+$/.test(token);
+    return (
+      token.length === this.QUICK_ACCESS_TOKEN_LENGTH &&
+      /^[a-f0-9]+$/.test(token)
+    );
   }
 
-  async create(userId: string, createWaterIntakeDto: CreateWaterIntakeDto): Promise<WaterIntakeResponse> {
+  async create(
+    userId: string,
+    createWaterIntakeDto: CreateWaterIntakeDto,
+  ): Promise<WaterIntakeResponse> {
     const intake = await this.prisma.waterIntake.create({
       data: {
         userId,
@@ -53,7 +59,10 @@ export class WaterIntakeService {
     return intakes.map(this.mapToResponse);
   }
 
-  async findByDate(userId: string, date: string): Promise<WaterIntakeResponse[]> {
+  async findByDate(
+    userId: string,
+    date: string,
+  ): Promise<WaterIntakeResponse[]> {
     const parsedDate = parseISO(date);
     const intakes = await this.prisma.waterIntake.findMany({
       where: {
@@ -75,13 +84,15 @@ export class WaterIntakeService {
 
     const user = await this.prisma.user.findUnique({
       where: { quickAccessToken },
-      include: { waterIntakes: {
-        where: {
-          timestamp: {
-            gte: new Date(Date.now() - 5 * 60 * 1000), // Last 5 minutes
+      include: {
+        waterIntakes: {
+          where: {
+            timestamp: {
+              gte: new Date(Date.now() - 5 * 60 * 1000), // Last 5 minutes
+            },
           },
         },
-      }},
+      },
     });
 
     if (!user) {
@@ -89,7 +100,9 @@ export class WaterIntakeService {
     }
 
     if (user.waterIntakes.length > 0) {
-      throw new UnauthorizedException('Please wait 5 minutes between quick access intakes');
+      throw new UnauthorizedException(
+        'Please wait 5 minutes between quick access intakes',
+      );
     }
 
     // Update last quick access time

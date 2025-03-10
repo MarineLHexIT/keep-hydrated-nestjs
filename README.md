@@ -96,20 +96,20 @@ yarn test:cov
 
 #### Register a new user
 ```http
-POST http://localhost:3000/auth/register
+POST /auth/register
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "YourPassword123",
-  "name": "Your Name"
+  "email": "user@example.com",    // Required, unique email
+  "password": "YourPassword123",  // Required, 8-72 chars, must have uppercase, lowercase, number
+  "name": "Your Name"            // Optional, 2-50 chars, letters/spaces/hyphens/apostrophes
 }
 ```
-Response includes a quick access token that can be used for quick water intake logging.
+Response includes user data, JWT token, and quick access token.
 
 #### Login
 ```http
-POST http://localhost:3000/auth/login
+POST /auth/login
 Content-Type: application/json
 
 {
@@ -117,32 +117,49 @@ Content-Type: application/json
   "password": "YourPassword123"
 }
 ```
+Response includes user data and JWT token.
+
+#### Check Authentication & Get Profile
+```http
+GET /auth
+Authorization: Bearer <jwt_token>
+```
+Response includes complete user profile (id, email, name, dailyGoal, quickAccessToken, lastQuickAccess, createdAt, updatedAt).
 
 #### Generate Quick Access Token
 ```http
-POST http://localhost:3000/auth/quick-access/generate
-Authorization: Bearer <your_jwt_token>
+POST /auth/quick-access/generate
+Authorization: Bearer <jwt_token>
 ```
+Response includes updated user profile with new quick access token.
 
 #### Revoke Quick Access Token
 ```http
-POST http://localhost:3000/auth/quick-access/revoke
-Authorization: Bearer <your_jwt_token>
+POST /auth/quick-access/revoke
+Authorization: Bearer <jwt_token>
 ```
+Response includes updated user profile with quick access token removed.
+
+#### Logout
+```http
+POST /auth/logout
+Authorization: Bearer <jwt_token>
+```
+Response confirms successful logout. Note: Token should be removed client-side.
 
 ### User Profile
 
 #### Get User Profile
 ```http
-GET http://localhost:3000/user/profile
-Authorization: Bearer <your_jwt_token>
+GET /user/profile
+Authorization: Bearer <jwt_token>
 ```
 Response includes user information (id, email, name, dailyGoal, quickAccessToken, lastQuickAccess, createdAt, updatedAt) without the password.
 
 #### Update User Profile
 ```http
-PATCH http://localhost:3000/user/profile
-Authorization: Bearer <your_jwt_token>
+PATCH /user/profile
+Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
@@ -158,30 +175,30 @@ Response includes the updated user profile without the password.
 
 #### Create a water intake
 ```http
-POST http://localhost:3000/water-intake
-Authorization: Bearer <your_jwt_token>
+POST /water-intake
+Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
-  "amount": 500
+  "amount": 500  // Optional, defaults to 500ml, range: 0-5000ml
 }
 ```
 
 #### Get today's water intake
 ```http
-GET http://localhost:3000/water-intake/today
-Authorization: Bearer <your_jwt_token>
+GET /water-intake/today
+Authorization: Bearer <jwt_token>
 ```
 
 #### Get all water intakes
 ```http
-GET http://localhost:3000/water-intake
-Authorization: Bearer <your_jwt_token>
+GET /water-intake
+Authorization: Bearer <jwt_token>
 ```
 
 #### Quick access (no authentication required)
 ```http
-GET http://localhost:3000/water-intake/quick/<quick_access_token>
+GET /water-intake/quick/<quick_access_token>
 ```
 
 ## Environment Variables

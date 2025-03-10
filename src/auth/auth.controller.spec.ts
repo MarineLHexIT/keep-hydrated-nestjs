@@ -5,7 +5,6 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { User } from '@prisma/client';
 import { RequestWithUser } from '../common/types/request.types';
-import { Request } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -97,7 +96,9 @@ describe('AuthController', () => {
       const result = await controller.generateQuickAccess(mockRequest);
 
       expect(result).toEqual(safeUser);
-      expect(service.generateQuickAccess).toHaveBeenCalledWith(mockRequest.user.userId);
+      expect(service.generateQuickAccess).toHaveBeenCalledWith(
+        mockRequest.user.userId,
+      );
     });
   });
 
@@ -109,7 +110,9 @@ describe('AuthController', () => {
       const result = await controller.revokeQuickAccess(mockRequest);
 
       expect(result).toEqual(safeUser);
-      expect(service.revokeQuickAccess).toHaveBeenCalledWith(mockRequest.user.userId);
+      expect(service.revokeQuickAccess).toHaveBeenCalledWith(
+        mockRequest.user.userId,
+      );
     });
   });
-}); 
+});

@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -18,7 +23,7 @@ export class AuthService {
   ) {}
 
   private mapToSafeUser(user: User): SafeUser {
-    const { password, ...safeUser } = user;
+    const { password: _, ...safeUser } = user;
     return safeUser;
   }
 
@@ -37,10 +42,16 @@ export class AuthService {
 
   private isValidQuickAccessToken(token: string | null): boolean {
     if (!token) return false;
-    return token.length === this.QUICK_ACCESS_TOKEN_LENGTH && /^[a-f0-9]+$/.test(token);
+    return (
+      token.length === this.QUICK_ACCESS_TOKEN_LENGTH &&
+      /^[a-f0-9]+$/.test(token)
+    );
   }
 
-  async validateUser(email: string, password: string): Promise<SafeUser | null> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<SafeUser | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       return this.mapToSafeUser(user);
@@ -100,7 +111,7 @@ export class AuthService {
   async generateQuickAccess(userId: string): Promise<SafeUser> {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { 
+      data: {
         quickAccessToken: this.generateQuickAccessToken(),
         lastQuickAccess: null,
       },
@@ -111,7 +122,7 @@ export class AuthService {
   async revokeQuickAccess(userId: string): Promise<SafeUser> {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { 
+      data: {
         quickAccessToken: null,
         lastQuickAccess: null,
       },
@@ -119,9 +130,9 @@ export class AuthService {
     return this.mapToSafeUser(user);
   }
 
-  async logout(): Promise<{ message: string }> {
+  logout(): Promise<{ message: string }> {
     // In a JWT-based authentication, we don't need to do anything server-side
     // The client should remove the token from their storage
-    return { message: 'Logged out successfully' };
+    return Promise.resolve({ message: 'Logged out successfully' });
   }
 }
