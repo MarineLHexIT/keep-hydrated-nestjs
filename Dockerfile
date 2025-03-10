@@ -25,6 +25,13 @@ COPY --from=builder /app/prisma ./prisma
 # Generate Prisma Client
 RUN npx prisma generate
 
+# Create startup script
+RUN echo '#!/bin/sh\n\
+echo "Running database migrations..."\n\
+npx prisma migrate deploy\n\
+echo "Starting the application..."\n\
+yarn start:prod' > /app/start.sh && chmod +x /app/start.sh
+
 EXPOSE 3000
 
-CMD ["yarn", "start:prod"] 
+CMD ["/app/start.sh"] 
