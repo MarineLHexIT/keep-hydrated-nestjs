@@ -24,9 +24,12 @@ COPY --from=builder /app/prisma ./prisma
 
 # Generate Prisma Client
 RUN npx prisma generate
-RUN echo "Running database migrations..." && \
-    npx prisma migrate deploy && \
-    echo "Database migrations completed successfully"
+
+# Note: Database migrations should be run after the container is up and the database is ready
+# You can do this by:
+# 1. Running migrations in your deployment script after the container is up
+# 2. Using a separate migration job in your CI/CD pipeline
+# 3. Running migrations manually with: docker-compose exec app npx prisma migrate deploy
 
 EXPOSE 3000
 
