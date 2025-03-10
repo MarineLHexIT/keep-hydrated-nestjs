@@ -5,7 +5,10 @@ import { D1Database, D1Result } from '@cloudflare/workers-types';
 export class D1Service {
   constructor(@Inject('DB') private readonly db: D1Database) {}
 
-  async query<T = any>(query: string, params: any[] = []): Promise<T[]> {
+  async query<T extends Record<string, unknown>>(
+    query: string,
+    params: unknown[] = [],
+  ): Promise<T[]> {
     const result = await this.db
       .prepare(query)
       .bind(...params)
@@ -13,9 +16,9 @@ export class D1Service {
     return result.results as T[];
   }
 
-  async queryOne<T = any>(
+  async queryOne<T extends Record<string, unknown>>(
     query: string,
-    params: any[] = [],
+    params: unknown[] = [],
   ): Promise<T | null> {
     const result = await this.db
       .prepare(query)
@@ -24,7 +27,7 @@ export class D1Service {
     return result as T | null;
   }
 
-  async execute(query: string, params: any[] = []): Promise<D1Result> {
+  async execute(query: string, params: unknown[] = []): Promise<D1Result> {
     return this.db
       .prepare(query)
       .bind(...params)

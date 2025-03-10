@@ -1,4 +1,4 @@
-export interface User {
+export interface User extends Record<string, unknown> {
   id: string;
   email: string;
   password: string;
@@ -12,7 +12,7 @@ export interface User {
 
 export type SafeUser = Omit<User, 'password'>;
 
-export interface UserWithoutDates {
+export interface UserWithoutDates extends Record<string, unknown> {
   id: string;
   email: string;
   password: string;

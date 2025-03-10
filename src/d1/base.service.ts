@@ -8,7 +8,9 @@ export abstract class BaseD1Service {
 
   constructor(protected readonly d1Service: D1Service) {}
 
-  protected async findAll<T>(conditions: Partial<T> = {}): Promise<T[]> {
+  protected async findAll<T extends Record<string, unknown>>(
+    conditions: Partial<T> = {},
+  ): Promise<T[]> {
     const entries = Object.entries(conditions);
     if (entries.length === 0) {
       return this.d1Service.query<T>(`SELECT * FROM ${this.tableName}`);
@@ -23,7 +25,9 @@ export abstract class BaseD1Service {
     );
   }
 
-  protected async findOne<T>(conditions: Partial<T>): Promise<T | null> {
+  protected async findOne<T extends Record<string, unknown>>(
+    conditions: Partial<T>,
+  ): Promise<T | null> {
     const entries = Object.entries(conditions);
     const whereClause = entries.map(([key]) => `${key} = ?`).join(' AND ');
     const values = entries.map(([, value]) => value);
@@ -34,7 +38,9 @@ export abstract class BaseD1Service {
     );
   }
 
-  protected async create<T extends Record<string, any>>(data: T): Promise<T> {
+  protected async create<T extends Record<string, unknown>>(
+    data: T,
+  ): Promise<T> {
     const keys = Object.keys(data);
     const values = Object.values(data);
     const placeholders = values.map(() => '?').join(', ');
@@ -47,13 +53,13 @@ export abstract class BaseD1Service {
     return data;
   }
 
-  protected async update<T extends Record<string, any>>(
+  protected async update<T extends Record<string, unknown>>(
     id: string,
     data: Partial<T>,
   ): Promise<void> {
     const entries = Object.entries(data);
     const setClause = entries.map(([key]) => `${key} = ?`).join(', ');
-    const values = entries.map(([, value]) => value);
+    const values = entries.map(([, value]) => value) as unknown[];
 
     await this.d1Service.execute(
       `UPDATE ${this.tableName} SET ${setClause} WHERE ${this.primaryKey} = ?`,

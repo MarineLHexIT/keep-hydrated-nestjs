@@ -23,7 +23,8 @@ export class AuthService {
   ) {}
 
   private mapToSafeUser(user: User): SafeUser {
-    const { password: _, ...safeUser } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...safeUser } = user;
     return safeUser;
   }
 
@@ -89,6 +90,10 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
+    if (!registerDto.name) {
+      throw new BadRequestException('Name is required');
+    }
+
     const existingUser = await this.d1Service.queryOne<User>(
       'SELECT * FROM users WHERE email = ?',
       [registerDto.email],
