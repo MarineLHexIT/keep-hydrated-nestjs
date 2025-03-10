@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { D1Database } from '@cloudflare/workers-types';
+import { D1Database, D1Result } from '@cloudflare/workers-types';
 
 @Injectable()
 export class D1Service {

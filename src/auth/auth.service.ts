@@ -5,12 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
+import { D1Service } from '../d1/d1.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponse, SafeUser } from '../common/types/response.types';
+import { User } from '../common/types/user.types';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -18,8 +18,8 @@ export class AuthService {
   private readonly QUICK_ACCESS_TOKEN_LENGTH = 64; // 32 bytes = 64 hex characters
 
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly d1Service: D1Service,
+    private readonly jwtService: JwtService,
   ) {}
 
   private mapToSafeUser(user: User): SafeUser {
@@ -52,7 +52,11 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<SafeUser | null> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.d1Service.queryOne<User>(
+      'SELECT * FROM users WHERE email = ?',
+      [email],
+    );
+
     if (user && (await bcrypt.compare(password, user.password))) {
       return this.mapToSafeUser(user);
     }
@@ -60,9 +64,10 @@ export class AuthService {
   }
 
   async getUserById(userId: string): Promise<SafeUser> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.d1Service.queryOne<User>(
+      'SELECT * FROM users WHERE id = ?',
+      [userId],
+    );
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -84,50 +89,88 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: registerDto.email },
-    });
+    const existingUser = await this.d1Service.queryOne<User>(
+      'SELECT * FROM users WHERE email = ?',
+      [registerDto.email],
+    );
 
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: registerDto.email,
-        password: hashedPassword,
-        name: registerDto.name,
-        quickAccessToken: this.generateQuickAccessToken(),
-      },
-    });
+    const newUser: User = {
+      id: randomBytes(16).toString('hex'),
+      email: registerDto.email,
+      password: hashedPassword,
+      name: registerDto.name,
+      dailyGoal: null,
+      quickAccessToken: this.generateQuickAccessToken(),
+      lastQuickAccess: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
+    await this.d1Service.execute(
+      `INSERT INTO users (
+        id, email, password, name, daily_goal, quick_access_token,
+        last_quick_access, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newUser.id,
+        newUser.email,
+        newUser.password,
+        newUser.name,
+        newUser.dailyGoal,
+        newUser.quickAccessToken,
+        newUser.lastQuickAccess,
+        newUser.createdAt.toISOString(),
+        newUser.updatedAt.toISOString(),
+      ],
+    );
+
+    const safeUser = this.mapToSafeUser(newUser);
     return {
-      access_token: this.generateToken(user),
-      user: this.mapToSafeUser(user),
+      access_token: this.generateToken(newUser),
+      user: safeUser,
     };
   }
 
   async generateQuickAccess(userId: string): Promise<SafeUser> {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        quickAccessToken: this.generateQuickAccessToken(),
-        lastQuickAccess: null,
-      },
-    });
-    return this.mapToSafeUser(user);
+    const user = await this.d1Service.queryOne<User>(
+      'SELECT * FROM users WHERE id = ?',
+      [userId],
+    );
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const quickAccessToken = this.generateQuickAccessToken();
+    await this.d1Service.execute(
+      'UPDATE users SET quick_access_token = ?, last_quick_access = NULL WHERE id = ?',
+      [quickAccessToken, userId],
+    );
+
+    return this.mapToSafeUser({ ...user, quickAccessToken });
   }
 
   async revokeQuickAccess(userId: string): Promise<SafeUser> {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        quickAccessToken: null,
-        lastQuickAccess: null,
-      },
-    });
-    return this.mapToSafeUser(user);
+    const user = await this.d1Service.queryOne<User>(
+      'SELECT * FROM users WHERE id = ?',
+      [userId],
+    );
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.d1Service.execute(
+      'UPDATE users SET quick_access_token = NULL, last_quick_access = NULL WHERE id = ?',
+      [userId],
+    );
+
+    return this.mapToSafeUser({ ...user, quickAccessToken: null });
   }
 
   logout(): Promise<{ message: string }> {

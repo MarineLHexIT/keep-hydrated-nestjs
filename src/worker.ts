@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import { D1Database } from '@cloudflare/workers-types';
 
 export interface Env {
   DB: D1Database;
@@ -13,10 +17,10 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    ctx: ExecutionContext,
+    _ctx: ExecutionContext,
   ): Promise<Response> {
     // Create Nest.js app with Fastify (lighter than Express)
-    const app = await NestFactory.create(
+    const app = await NestFactory.create<NestFastifyApplication>(
       AppModule,
       new FastifyAdapter({
         logger: env.NODE_ENV === 'development',
@@ -47,11 +51,12 @@ export default {
     try {
       const response = await fastifyInstance.inject(fastifyRequest);
 
-      return new Response(response.payload, {
-        status: response.statusCode,
+      return new Response(response.payload as string, {
+        status: response.statusCode as number,
         headers: response.headers as HeadersInit,
       });
-    } catch (error) {
+    } catch (err) {
+      console.error('Error handling request:', err);
       return new Response(
         JSON.stringify({
           statusCode: 500,
