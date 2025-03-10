@@ -19,4 +19,14 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('ping', () => {
+    it('should return status ok and timestamp', () => {
+      const result = appController.ping();
+
+      expect(result.status).toBe('ok');
+      expect(result.timestamp).toBeDefined();
+      expect(new Date(result.timestamp).getTime()).not.toBeNaN();
+    });
+  });
 });
