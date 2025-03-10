@@ -201,6 +201,40 @@ Authorization: Bearer <jwt_token>
 GET /water-intake/quick/<quick_access_token>
 ```
 
+### Health Check
+
+#### Check System Health
+```http
+GET /ping
+```
+Response includes:
+- Application status
+- Current timestamp
+- Application version
+- System uptime (in seconds)
+- Database health (status and latency)
+- Memory usage (total, free, and used in MB)
+
+Example response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-20T12:00:00.000Z",
+  "version": "0.0.1",
+  "uptime": 3600,
+  "database": {
+    "status": "ok",
+    "latency": 5
+  },
+  "memory": {
+    "total": 16384,
+    "free": 8192,
+    "used": 8192
+  }
+}
+```
+Note: This endpoint is rate-limited.
+
 ## Environment Variables
 
 ### Application Variables
